@@ -1,40 +1,16 @@
 import React, { useState } from 'react';
 import { Search, Clock, ChefHat, Users, TrendingUp } from 'lucide-react';
+import RecipeCard from '../components/recipe/RecipeCard';
+import { recipesByCategory, featuredRecipes } from '../data/recipes';
 
 const Home = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   const handleSearch = (e) => {
     e.preventDefault();
     console.log('Searching for:', searchTerm);
   };
-
-  const featuredRecipes = [
-    {
-      id: 1,
-      title: "Classic Spaghetti Carbonara",
-      image: "/api/placeholder/400/300",
-      time: "30 min",
-      difficulty: "Medium",
-      chef: "Chef Maria"
-    },
-    {
-      id: 2,
-      title: "Homemade Pizza Margherita",
-      image: "/api/placeholder/400/300",
-      time: "45 min",
-      difficulty: "Easy",
-      chef: "Chef John"
-    },
-    {
-      id: 3,
-      title: "Chocolate Lava Cake",
-      image: "/api/placeholder/400/300",
-      time: "25 min",
-      difficulty: "Medium",
-      chef: "Chef Sarah"
-    }
-  ];
 
   const categories = [
     { name: 'Breakfast', icon: '🍳' },
@@ -42,8 +18,13 @@ const Home = () => {
     { name: 'Dinner', icon: '🍽️' },
     { name: 'Desserts', icon: '🍰' },
     { name: 'Vegetarian', icon: '🥗' },
-    { name: 'Quick & Easy', icon: '⚡' }
+    { name: 'Quick', icon: '⚡' }
   ];
+
+  const handleCategoryClick = (categoryName) => {
+    setSelectedCategory(categoryName.toLowerCase());
+  };
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -109,7 +90,10 @@ const Home = () => {
           {categories.map((category) => (
             <button
               key={category.name}
-              className="p-6 text-center bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow"
+              onClick={() => handleCategoryClick(category.name)}
+              className={`p-6 text-center bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow ${
+                selectedCategory === category.name.toLowerCase() ? 'ring-2 ring-green-500' : ''
+              }`}
             >
               <div className="text-3xl mb-2">{category.icon}</div>
               <div className="font-medium">{category.name}</div>
@@ -117,6 +101,20 @@ const Home = () => {
           ))}
         </div>
       </div>
+
+      {/* Category Recipes Section */}
+      {selectedCategory && recipesByCategory[selectedCategory] && (
+        <div className="container mx-auto px-4 py-12">
+          <div className="max-w-5xl mx-auto">
+            <h2 className="text-3xl font-bold mb-8 capitalize">{selectedCategory} Recipes</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {recipesByCategory[selectedCategory].map((recipe) => (
+                <RecipeCard key={recipe.id} recipe={recipe} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Featured Recipes Section */}
       <div className="container mx-auto px-4 py-16 bg-white">
@@ -130,33 +128,12 @@ const Home = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {featuredRecipes.map((recipe) => (
-              <div key={recipe.id} className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-                <img
-                  src={recipe.image}
-                  alt={recipe.title}
-                  className="w-full h-48 object-cover"
-                />
-                <div className="p-6">
-                  <h3 className="text-xl font-semibold mb-2">{recipe.title}</h3>
-                  <div className="flex items-center justify-between text-sm text-gray-500">
-                    <span className="flex items-center">
-                      <Clock className="h-4 w-4 mr-1" />
-                      {recipe.time}
-                    </span>
-                    <span>{recipe.difficulty}</span>
-                  </div>
-                  <div className="mt-4 pt-4 border-t text-sm text-gray-600">
-                    <span className="flex items-center">
-                      <ChefHat className="h-4 w-4 mr-1" />
-                      {recipe.chef}
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <RecipeCard key={recipe.id} recipe={recipe} />
             ))}
           </div>
         </div>
       </div>
+
 
       {/* Call to Action Section */}
       <div className="bg-green-50 py-16">
