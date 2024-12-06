@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Clock, ChefHat, Users, TrendingUp } from 'lucide-react';
 import RecipeCard from '../components/recipe/RecipeCard';
 import { recipesByCategory, featuredRecipes } from '../data/recipes';
@@ -6,10 +6,38 @@ import { recipesByCategory, featuredRecipes } from '../data/recipes';
 const Home = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [searchResults, setSearchResults] = useState([]);
 
-  const handleSearch = (e) => {
+  // Handle search
+  const handleSearch = async (e) => {
     e.preventDefault();
-    console.log('Searching for:', searchTerm);
+    if (!searchTerm.trim()) return;
+
+    try {
+      setLoading(true);
+      const response = await fetch(`http://localhost:5000/api/recipes?search=${searchTerm}`);
+      const data = await response.json();
+      setSearchResults(data.recipes || []);
+    } catch (err) {
+      setError('Failed to fetch recipes');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Get current recipes to display based on category
+  const getCurrentRecipes = () => {
+    if (searchTerm && searchResults.length > 0) {
+      return searchResults;
+    }
+    
+    if (selectedCategory) {
+      return recipesByCategory[selectedCategory.toLowerCase()] || [];
+    }
+    
+    return [];
   };
 
   const categories = [
@@ -23,6 +51,8 @@ const Home = () => {
 
   const handleCategoryClick = (categoryName) => {
     setSelectedCategory(categoryName.toLowerCase());
+    setSearchTerm(''); // Clear search when selecting category
+    setSearchResults([]); // Clear search results
   };
 
 
@@ -103,36 +133,48 @@ const Home = () => {
       </div>
 
       {/* Category Recipes Section */}
-      {selectedCategory && recipesByCategory[selectedCategory] && (
-        <div className="container mx-auto px-4 py-12">
-          <div className="max-w-5xl mx-auto">
-            <h2 className="text-3xl font-bold mb-8 capitalize">{selectedCategory} Recipes</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {recipesByCategory[selectedCategory].map((recipe) => (
-                <RecipeCard key={recipe.id} recipe={recipe} />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Featured Recipes Section */}
-      <div className="container mx-auto px-4 py-16 bg-white">
-        <div className="max-w-5xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold">Featured Recipes</h2>
-            <div className="flex items-center text-green-600">
-              <TrendingUp className="h-5 w-5 mr-2" />
-              <span>Trending now</span>
-            </div>
-          </div>
+      {(selectedCategory || searchResults.length > 0) && (
+    <div className="container mx-auto px-4 py-12">
+      <div className="max-w-5xl mx-auto">
+        <h2 className="text-3xl font-bold mb-8 capitalize">
+          {searchTerm ? 'Search Results' : `${selectedCategory} Recipes`}
+        </h2>
+        {loading ? (
+          <div className="text-center">Loading...</div>
+        ) : error ? (
+          <div className="text-red-500 text-center">{error}</div>
+        ) : getCurrentRecipes().length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {featuredRecipes.map((recipe) => (
+            {getCurrentRecipes().map((recipe) => (
               <RecipeCard key={recipe.id} recipe={recipe} />
             ))}
           </div>
+        ) : (
+          <div className="text-center text-gray-600">
+            {searchTerm ? 'No recipes found matching your search.' : 'No recipes found in this category.'}
+          </div>
+        )}
+      </div>
+    </div>
+  )}
+
+  {/* Featured Recipes Section */}
+  <div className="container mx-auto px-4 py-16 bg-white">
+    <div className="max-w-5xl mx-auto">
+      <div className="flex justify-between items-center mb-8">
+        <h2 className="text-3xl font-bold">Featured Recipes</h2>
+        <div className="flex items-center text-green-600">
+          <TrendingUp className="h-5 w-5 mr-2" />
+          <span>Trending now</span>
         </div>
       </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {featuredRecipes.map((recipe) => (
+          <RecipeCard key={recipe.id} recipe={recipe} />
+        ))}
+      </div>
+    </div>
+  </div>
 
 
       {/* Call to Action Section */}

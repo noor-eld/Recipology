@@ -1,33 +1,35 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/layout/Navbar';
-import Footer from './components/layout/Footer';
 import Home from './pages/Home';
-import Login from './components/auth/Login';
-import Register from './components/auth/Register';
-import RecipeDetail from './components/recipe/RecipeDetail';
+import Login from './pages/Login';
+import Register from './pages/Register';
 import CreateRecipe from './pages/CreateRecipe';
-import Profile from './pages/Profile';
+import RecipeDetail from './components/recipe/RecipeDetail';
 
-function App() {
+const App = () => {
   return (
-    <Router>
-      <div className="min-h-screen flex flex-col">
+    <AuthProvider>
+      <BrowserRouter>
         <Navbar />
-        <main className="flex-grow">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/recipe/:id" element={<RecipeDetail />} />
-            <Route path="/create-recipe" element={<CreateRecipe />} />
-            <Route path="/profile" element={<Profile />} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
-    </Router>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route 
+            path="/create-recipe" 
+            element={
+              <ProtectedRoute>
+                <CreateRecipe />
+              </ProtectedRoute>
+            } 
+          />
+          <Route path="/recipe/:id" element={<RecipeDetail />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
-}
+};
 
 export default App;
