@@ -14,13 +14,49 @@ const Home = () => {
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!searchTerm.trim()) return;
-
+  
+    setLoading(true);
+    setError(null);
+    
     try {
-      setLoading(true);
-      const response = await fetch(`http://localhost:5000/api/recipes?search=${searchTerm}`);
-      const data = await response.json();
-      setSearchResults(data.recipes || []);
+      // Search prefilled recipes
+      const prefilledResults = [];
+      const searchTermLower = searchTerm.toLowerCase();
+  
+      // Search in featured recipes
+      prefilledResults.push(...featuredRecipes.filter(recipe => 
+        recipe.title.toLowerCase().includes(searchTermLower) ||
+        recipe.description.toLowerCase().includes(searchTermLower) ||
+        recipe.ingredients.some(ing => ing.toLowerCase().includes(searchTermLower))
+      ));
+  
+      // Search in all categories
+      Object.values(recipesByCategory).forEach(categoryRecipes => {
+        prefilledResults.push(...categoryRecipes.filter(recipe =>
+          recipe.title.toLowerCase().includes(searchTermLower) ||
+          recipe.description.toLowerCase().includes(searchTermLower) ||
+          recipe.ingredients.some(ing => ing.toLowerCase().includes(searchTermLower))
+        ));
+      });
+  
+      // Search database recipes
+      const response = await fetch(`http://localhost:5000/api/recipes/search?q=${searchTerm}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch recipes');
+      }
+      const dbRecipes = await response.json();
+  
+      // Combine results and remove duplicates
+      const allResults = [...prefilledResults, ...dbRecipes];
+      
+      setSearchResults(allResults);
+      
+      if (allResults.length === 0) {
+        console.log('No results found');
+      }
+  
     } catch (err) {
+      console.error('Search error:', err);
       setError('Failed to fetch recipes');
     } finally {
       setLoading(false);

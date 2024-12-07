@@ -58,14 +58,22 @@ const recipeSchema = new mongoose.Schema({
   }
 });
 
-// text index for search functionality
+// Add text index for search functionality
+recipeSchema.index({ 
+  title: 'text', 
+  description: 'text',
+  ingredients: 'text',
+  category: 'text'
+});
+
+// Pre-save hook
 recipeSchema.pre('save', function(next) {
-    console.log('Saving recipe:', {
-      id: this._id,
-      title: this.title,
-      favoriteCount: this.favoriteCount
-    });
-    next();
+  console.log('Saving recipe:', {
+    id: this._id,
+    title: this.title,
+    favoriteCount: this.favoriteCount
   });
+  next();
+});
 
 module.exports = mongoose.model('Recipe', recipeSchema);

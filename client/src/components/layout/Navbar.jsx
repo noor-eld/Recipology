@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { LogOut, Heart } from 'lucide-react';
+import SearchBar from './SearchBar';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -19,6 +20,7 @@ const Navbar = () => {
           <Link to="/" className="text-2xl font-bold text-gray-800">
             Recipology
           </Link>
+
           <div className="flex space-x-4 items-center">
             {user ? (
               <>

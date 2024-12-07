@@ -177,13 +177,20 @@ exports.deleteRecipe = async (req, res) => {
   };
   
   // Search Recipes
-exports.searchRecipes = async (req, res) => {
+  exports.searchRecipes = async (req, res) => {
     try {
       const { q, category } = req.query;
-      const query = {};
+      let query = {};
   
       if (q) {
-        query.$text = { $search: q };
+        // Search in title, description, and ingredients
+        query = {
+          $or: [
+            { title: { $regex: q, $options: 'i' } },
+            { description: { $regex: q, $options: 'i' } },
+            { ingredients: { $elemMatch: { $regex: q, $options: 'i' } } }
+          ]
+        };
       }
   
       if (category) {
@@ -194,6 +201,7 @@ exports.searchRecipes = async (req, res) => {
         .populate('author', 'username')
         .sort('-createdAt');
   
+      console.log(`Search found ${recipes.length} recipes for query: ${q}`);
       res.json(recipes);
     } catch (error) {
       console.error('Error in searchRecipes:', error);
