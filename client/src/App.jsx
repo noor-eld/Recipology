@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import CreateRecipe from './pages/CreateRecipe';
 import RecipeDetail from './components/recipe/RecipeDetail';
+import FavoritesPage from './pages/FavoritesPage';
 
 const App = () => {
   return (
@@ -14,9 +15,13 @@ const App = () => {
       <BrowserRouter>
         <Navbar />
         <Routes>
+          {/* Public Routes */}
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/recipe/:id" element={<RecipeDetail />} />
+          
+          {/* Protected Routes */}
           <Route 
             path="/create-recipe" 
             element={
@@ -25,7 +30,14 @@ const App = () => {
               </ProtectedRoute>
             } 
           />
-          <Route path="/recipe/:id" element={<RecipeDetail />} />
+          <Route 
+            path="/favorites" 
+            element={
+              <ProtectedRoute>
+                <FavoritesPage />
+              </ProtectedRoute>
+            } 
+          />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

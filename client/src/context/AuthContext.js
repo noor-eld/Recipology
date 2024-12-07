@@ -7,16 +7,48 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const user = localStorage.getItem('user');
-    if (user) {
-      setUser(JSON.parse(user));
+    try {
+      const storedUser = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
+
+      if (storedUser && token) {
+        const parsedUser = JSON.parse(storedUser);
+        // Make sure the token is attached to the user object
+        if (!parsedUser.token) {
+          parsedUser.token = token;
+        }
+        setUser(parsedUser);
+        console.log('Restored user session:', parsedUser); // Debug log
+      }
+    } catch (error) {
+      console.error('Error parsing stored user:', error);
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
     }
     setLoading(false);
   }, []);
 
   const login = (userData) => {
-    setUser(userData);
-    localStorage.setItem('user', JSON.stringify(userData));
+    if (!userData) {
+      console.error('Invalid user data provided to login');
+      return;
+    }
+
+    console.log('Logging in with user data:', userData); // Debug log
+
+    // Make sure we have all required fields
+    const userToStore = {
+      _id: userData._id,
+      username: userData.username,
+      email: userData.email,
+      token: userData.token || localStorage.getItem('token') // Backup token check
+    };
+
+    setUser(userToStore);
+    localStorage.setItem('user', JSON.stringify(userToStore));
+    if (userData.token) {
+      localStorage.setItem('token', userData.token);
+    }
   };
 
   const logout = () => {

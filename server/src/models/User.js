@@ -1,4 +1,3 @@
-// server/src/models/User.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -25,6 +24,13 @@ const userSchema = new mongoose.Schema({
     required: [true, 'Password is required'],
     minlength: [6, 'Password must be at least 6 characters']
   },
+  favorites: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Recipe'
+  }],
+  demoFavorites: [{
+    type: String // Store prefilled recipe IDs as strings
+  }],
   createdAt: {
     type: Date,
     default: Date.now

@@ -67,63 +67,70 @@ const CreateRecipe = () => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-
+  
     try {
-      const formData = new FormData();
-      
-      // Validate required fields
-      const requiredFields = ['title', 'description', 'category'];
-      for (const field of requiredFields) {
-        if (!recipe[field]) {
-          throw new Error(`${field.charAt(0).toUpperCase() + field.slice(1)} is required`);
-        }
-      }
-
-      // Format and validate arrays
-      const cleanIngredients = recipe.ingredients.filter(item => item.trim() !== '');
-      const cleanInstructions = recipe.instructions.filter(item => item.trim() !== '');
-
-      if (cleanIngredients.length === 0) {
-        throw new Error('At least one ingredient is required');
-      }
-
-      if (cleanInstructions.length === 0) {
-        throw new Error('At least one instruction is required');
-      }
-
-      // Append all form data
-      Object.keys(recipe).forEach(key => {
-        if (key === 'ingredients') {
-          formData.append(key, JSON.stringify(cleanIngredients));
-        } else if (key === 'instructions') {
-          formData.append(key, JSON.stringify(cleanInstructions));
-        } else if (key === 'image' && recipe[key]) {
-          formData.append('image', recipe[key]);
-        } else {
-          formData.append(key, recipe[key]);
+      // Convert empty strings to zero for numeric fields
+      const numericFields = ['prepTime', 'cookTime', 'servings'];
+      const processedRecipe = { ...recipe };
+      numericFields.forEach(field => {
+        if (processedRecipe[field] === '') {
+          processedRecipe[field] = '0';
         }
       });
-
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Please login to create a recipe');
+  
+      // Create FormData
+      const formData = new FormData();
+  
+      // Append basic fields
+      formData.append('title', processedRecipe.title.trim());
+      formData.append('description', processedRecipe.description.trim());
+      formData.append('category', processedRecipe.category.toLowerCase());
+      formData.append('prepTime', processedRecipe.prepTime.toString());
+      formData.append('cookTime', processedRecipe.cookTime.toString());
+      formData.append('servings', processedRecipe.servings.toString());
+      formData.append('difficulty', processedRecipe.difficulty);
+  
+      // Clean and append arrays
+      const cleanIngredients = processedRecipe.ingredients.filter(item => item.trim() !== '');
+      const cleanInstructions = processedRecipe.instructions.filter(item => item.trim() !== '');
+      
+      if (cleanIngredients.length === 0) throw new Error('At least one ingredient is required');
+      if (cleanInstructions.length === 0) throw new Error('At least one instruction is required');
+  
+      formData.append('ingredients', JSON.stringify(cleanIngredients));
+      formData.append('instructions', JSON.stringify(cleanInstructions));
+  
+      // Handle image
+      if (processedRecipe.image instanceof File) {
+        formData.append('image', processedRecipe.image);
       }
-
+  
+      // Verify authentication
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('Please login to create a recipe');
+  
+      // Log form data for debugging
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}: ${value}`);
+      }
+  
       const response = await fetch('http://localhost:5000/api/recipes', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${token}`
+          'Authorization': `Bearer ${token}`
         },
         body: formData
       });
-
+  
+      const data = await response.json();
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to create recipe');
+        throw new Error(data.error || data.details || 'Failed to create recipe');
       }
-
+  
+      console.log('Recipe created successfully:', data);
       navigate('/');
     } catch (err) {
+      console.error('Error creating recipe:', err);
       setError(err.message);
       window.scrollTo(0, 0);
     } finally {
@@ -144,119 +151,149 @@ const CreateRecipe = () => {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Image Upload */}
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">Recipe Image</label>
-          <div className="flex items-center justify-center w-full">
-            {imagePreview ? (
-              <div className="relative w-full h-64">
-                <img
-                  src={imagePreview}
-                  alt="Recipe preview"
-                  className="w-full h-64 object-cover rounded-lg"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setImagePreview(null);
-                    setRecipe({ ...recipe, image: null });
-                  }}
-                  className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600"
-                >
-                  ×
-                </button>
-              </div>
-            ) : (
-              <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400">
-                <Camera className="w-12 h-12 text-gray-400" />
-                <span className="mt-2 text-gray-500">Click to upload image</span>
-                <input
-                  type="file"
-                  className="hidden"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                />
-              </label>
-            )}
-          </div>
+        <label htmlFor="recipe-image" className="block text-sm font-medium text-gray-700">
+          Recipe Image
+        </label>
+        <div className="flex items-center justify-center w-full">
+          {imagePreview ? (
+            <div className="relative w-full h-64">
+              <img
+                src={imagePreview}
+                alt="Recipe preview"
+                className="w-full h-64 object-cover rounded-lg"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setImagePreview(null);
+                  setRecipe({ ...recipe, image: null });
+                }}
+                className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600"
+                aria-label="Remove image"
+              >
+                ×
+              </button>
+            </div>
+          ) : (
+            <label htmlFor="recipe-image" className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400">
+              <Camera className="w-12 h-12 text-gray-400" />
+              <span className="mt-2 text-gray-500">Click to upload image</span>
+              <input
+                id="recipe-image"
+                name="recipe-image"
+                type="file"
+                className="hidden"
+                accept="image/*"
+                onChange={handleImageChange}
+              />
+            </label>
+          )}
         </div>
+      </div>
+
 
         {/* Basic Info */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Title</label>
-            <input
-              type="text"
-              value={recipe.title}
-              onChange={(e) => setRecipe({ ...recipe, title: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Category</label>
-            <select
-              value={recipe.category}
-              onChange={(e) => setRecipe({ ...recipe, category: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-              required
-            >
-              <option value="">Select category</option>
-              <option value="breakfast">Breakfast</option>
-              <option value="lunch">Lunch</option>
-              <option value="dinner">Dinner</option>
-              <option value="dessert">Dessert</option>
-              <option value="snack">Snack</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Time and Servings */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Prep Time (minutes)</label>
-            <input
-              type="number"
-              value={recipe.prepTime}
-              onChange={(e) => setRecipe({ ...recipe, prepTime: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-              min="0"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Cook Time (minutes)</label>
-            <input
-              type="number"
-              value={recipe.cookTime}
-              onChange={(e) => setRecipe({ ...recipe, cookTime: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-              min="0"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Servings</label>
-            <input
-              type="number"
-              value={recipe.servings}
-              onChange={(e) => setRecipe({ ...recipe, servings: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-              min="1"
-              required
-            />
-          </div>
-        </div>
-
-        {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">Description</label>
-          <textarea
-            value={recipe.description}
-            onChange={(e) => setRecipe({ ...recipe, description: e.target.value })}
-            rows={3}
+          <label htmlFor="recipe-title" className="block text-sm font-medium text-gray-700">
+            Title
+          </label>
+          <input
+            id="recipe-title"
+            name="title"
+            type="text"
+            value={recipe.title}
+            onChange={(e) => setRecipe({ ...recipe, title: e.target.value })}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
             required
           />
         </div>
+        <div>
+          <label htmlFor="recipe-category" className="block text-sm font-medium text-gray-700">
+            Category
+          </label>
+          <select
+            id="recipe-category"
+            name="category"
+            value={recipe.category}
+            onChange={(e) => setRecipe({ ...recipe, category: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+            required
+          >
+            <option value="">Select category</option>
+            <option value="breakfast">Breakfast</option>
+            <option value="lunch">Lunch</option>
+            <option value="dinner">Dinner</option>
+            <option value="dessert">Dessert</option>
+            <option value="snack">Snack</option>
+          </select>
+        </div>
+      </div>
+
+        {/* Time and Servings */}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div>
+          <label htmlFor="prep-time" className="block text-sm font-medium text-gray-700">
+            Prep Time (minutes)
+          </label>
+          <input
+            id="prep-time"
+            name="prepTime"
+            type="number"
+            value={recipe.prepTime}
+            onChange={(e) => setRecipe({ ...recipe, prepTime: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+            min="0"
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="cook-time" className="block text-sm font-medium text-gray-700">
+            Cook Time (minutes)
+          </label>
+          <input
+            id="cook-time"
+            name="cookTime"
+            type="number"
+            value={recipe.cookTime}
+            onChange={(e) => setRecipe({ ...recipe, cookTime: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+            min="0"
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="servings" className="block text-sm font-medium text-gray-700">
+            Servings
+          </label>
+          <input
+            id="servings"
+            name="servings"
+            type="number"
+            value={recipe.servings}
+            onChange={(e) => setRecipe({ ...recipe, servings: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+            min="1"
+            required
+          />
+        </div>
+      </div>
+
+        {/* Description */}
+        <div>
+        <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+          Description
+        </label>
+        <textarea
+          id="description"
+          name="description"
+          value={recipe.description}
+          onChange={(e) => setRecipe({ ...recipe, description: e.target.value })}
+          rows={3}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+          required
+        />
+      </div>
 
         {/* Ingredients */}
         <div className="space-y-2">

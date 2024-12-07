@@ -1,4 +1,3 @@
-// src/models/Recipe.js
 const mongoose = require('mongoose');
 
 const recipeSchema = new mongoose.Schema({
@@ -44,6 +43,10 @@ const recipeSchema = new mongoose.Schema({
   image: {
     type: String
   },
+  favoriteCount: {
+    type: Number,
+    default: 0
+  },
   author: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -56,6 +59,13 @@ const recipeSchema = new mongoose.Schema({
 });
 
 // text index for search functionality
-recipeSchema.index({ title: 'text', description: 'text', category: 'text' });
+recipeSchema.pre('save', function(next) {
+    console.log('Saving recipe:', {
+      id: this._id,
+      title: this.title,
+      favoriteCount: this.favoriteCount
+    });
+    next();
+  });
 
 module.exports = mongoose.model('Recipe', recipeSchema);

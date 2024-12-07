@@ -27,21 +27,32 @@ const Login = () => {
       });
 
       const data = await response.json();
+      console.log('Login response:', data); // Debug log
 
       if (!response.ok) {
-        throw new Error(data.error || 'Login failed');
+        throw new Error(data.message || 'Login failed');
       }
 
+      // The response contains user data directly, not nested under 'user'
+      const userData = {
+        _id: data._id,
+        username: data.username,
+        email: data.email,
+        token: data.token
+      };
+
+      login(userData);
       localStorage.setItem('token', data.token);
-      login(data.user);
       navigate('/');
     } catch (err) {
+      console.error('Login error:', err);
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
+  // Rest of your component remains the same
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
