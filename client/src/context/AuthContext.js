@@ -29,26 +29,26 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = (userData) => {
-    if (!userData) {
-      console.error('Invalid user data provided to login');
-      return;
+    if (!userData || !userData._id || !userData.username || !userData.email) {
+      console.error('Invalid user data provided to login:', userData);
+      return false; // Return false to indicate failure
     }
-
-    console.log('Logging in with user data:', userData); // Debug log
-
-    // Make sure we have all required fields
+  
+    console.log('Logging in with user data:', userData);
+  
     const userToStore = {
       _id: userData._id,
       username: userData.username,
       email: userData.email,
-      token: userData.token || localStorage.getItem('token') // Backup token check
+      token: userData.token || localStorage.getItem('token')
     };
-
+  
     setUser(userToStore);
     localStorage.setItem('user', JSON.stringify(userToStore));
     if (userData.token) {
       localStorage.setItem('token', userData.token);
     }
+    return true; // Return true to indicate success
   };
 
   const logout = () => {

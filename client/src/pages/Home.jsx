@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import { Clock, ChefHat, Users, TrendingUp } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import RecipeCard from '../components/recipe/RecipeCard';
 import SearchBar from '../components/layout/SearchBar';
 import { useSearch } from '../context/SearchContext';
 import { recipesByCategory, featuredRecipes } from '../data/recipes';
+import { useAuth } from '../context/AuthContext';
 
 const Home = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const { searchTerm, searchResults, loading, error } = useSearch();
+  const { user } = useAuth();
 
   // Get current recipes to display based on category or search
   const getCurrentRecipes = () => {
@@ -147,15 +150,33 @@ const Home = () => {
       </div>
 
       {/* Call to Action Section */}
-      <div className="bg-green-50 py-16">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Start Cooking?</h2>
-          <p className="text-xl text-gray-600 mb-8">Join our community and share your culinary creations</p>
-          <button className="px-8 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors font-medium">
-            Create Account
-          </button>
+      {!user ? (
+        <div className="bg-green-50 py-16">
+          <div className="container mx-auto px-4 text-center">
+            <h2 className="text-3xl font-bold mb-4">Ready to Start Cooking?</h2>
+            <p className="text-xl text-gray-600 mb-8">Join our community and share your culinary creations</p>
+            <Link 
+              to="/register" 
+              className="px-8 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors font-medium"
+            >
+              Create Account
+            </Link>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="bg-green-50 py-16">
+          <div className="container mx-auto px-4 text-center">
+            <h2 className="text-3xl font-bold mb-4">Welcome Back, {user.username}!</h2>
+            <p className="text-xl text-gray-600 mb-8">Ready to create your next culinary masterpiece?</p>
+            <Link 
+              to="/create-recipe" 
+              className="px-8 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors font-medium"
+            >
+              Create New Recipe
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

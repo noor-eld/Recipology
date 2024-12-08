@@ -17,15 +17,15 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
+  
     if (formData.password !== formData.confirmPassword) {
       return setError('Passwords do not match');
     }
-
+  
     setLoading(true);
-
+  
     try {
-      const response = await fetch('/api/auth/register', {
+      const response = await fetch('http://localhost:5000/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -36,17 +36,29 @@ const Register = () => {
           password: formData.password
         })
       });
-
+  
       const data = await response.json();
-
+  
       if (!response.ok) {
         throw new Error(data.error || 'Registration failed');
       }
-
-      localStorage.setItem('token', data.token);
-      login(data.user);
-      navigate('/');
+  
+      // Check if we have all required data
+      if (!data._id || !data.username || !data.email || !data.token) {
+        throw new Error('Incomplete user data received');
+      }
+  
+      // Attempt to login with the received data
+      const loginSuccess = login(data);
+      
+      if (loginSuccess) {
+        navigate('/');
+      } else {
+        throw new Error('Failed to initialize user session');
+      }
+  
     } catch (err) {
+      console.error('Registration error:', err);
       setError(err.message);
     } finally {
       setLoading(false);
