@@ -154,25 +154,42 @@ exports.updateRecipe = async (req, res) => {
     }
   };
   
-  // Delete Recipe
+ // Delete Recipe
 exports.deleteRecipe = async (req, res) => {
     try {
-      const recipe = await Recipe.findById(req.params.id);
+      console.log('Attempting to delete recipe:', req.params.id);
       
+      const recipe = await Recipe.findById(req.params.id);
       if (!recipe) {
+        console.log('Recipe not found:', req.params.id);
         return res.status(404).json({ error: 'Recipe not found' });
       }
   
       // Check if user is the author
       if (recipe.author.toString() !== req.user._id.toString()) {
+        console.log('Unauthorized delete attempt:', {
+          recipeAuthor: recipe.author,
+          requestUser: req.user._id
+        });
         return res.status(403).json({ error: 'Not authorized to delete this recipe' });
       }
   
-      await recipe.remove();
+      // Delete the recipe
+      const deletedRecipe = await Recipe.findByIdAndDelete(recipe._id);
+      
+      if (!deletedRecipe) {
+        return res.status(404).json({ error: 'Recipe not found during deletion' });
+      }
+  
+      console.log('Recipe deleted successfully:', req.params.id);
       res.json({ message: 'Recipe deleted successfully' });
+  
     } catch (error) {
       console.error('Error in deleteRecipe:', error);
-      res.status(500).json({ error: 'Failed to delete recipe' });
+      res.status(500).json({ 
+        error: 'Failed to delete recipe',
+        details: error.message 
+      });
     }
   };
   
@@ -206,5 +223,19 @@ exports.deleteRecipe = async (req, res) => {
     } catch (error) {
       console.error('Error in searchRecipes:', error);
       res.status(500).json({ error: 'Failed to search recipes' });
+    }
+  };
+
+  exports.getUserRecipes = async (req, res) => {
+    try {
+      const recipes = await Recipe.find({ author: req.user._id })
+        .populate('author', 'username')
+        .sort('-createdAt');
+      
+      console.log(`Found ${recipes.length} recipes for user:`, req.user._id);
+      res.json(recipes);
+    } catch (error) {
+      console.error('Error in getUserRecipes:', error);
+      res.status(500).json({ error: 'Failed to fetch recipes' });
     }
   };

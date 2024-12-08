@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const mongoose = require('mongoose'); // Add this line
+const mongoose = require('mongoose'); 
 const connectDB = require('./config/database');
 require('dotenv').config();
 
@@ -27,10 +27,34 @@ app.get('/api/test', (req, res) => {
   });
 });
 
+// debugging
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+    next();
+  });
+
+app.use((req, res, next) => {
+    console.log('Incoming request:', {
+      method: req.method,
+      path: req.path,
+      headers: {
+        authorization: req.headers.authorization ? 'Bearer [hidden]' : 'none',
+        'content-type': req.headers['content-type']
+      }
+    });
+    next();
+  });
+
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/recipes', require('./routes/recipeRoutes'));
 app.use('/uploads', express.static('uploads'));
+
+// Add this AFTER your routes but BEFORE the 404 handler
+app.use((req, res, next) => {
+    console.log('No route matched for:', req.method, req.originalUrl);
+    next();
+  });
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -42,8 +66,9 @@ app.use((err, req, res, next) => {
 
 // 404 handler
 app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
-});
+    console.log('404 handler called for:', req.method, req.originalUrl);
+    res.status(404).json({ error: 'Route not found' });
+  });
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

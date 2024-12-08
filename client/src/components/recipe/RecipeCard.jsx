@@ -1,17 +1,19 @@
 import React, { useEffect } from 'react';
-import { Clock, ChefHat } from 'lucide-react';
+import { Clock, ChefHat, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import FavoriteButton from './FavoriteButton';
-import { useAuth } from '../../context/AuthContext'; // Add this import
+import { useAuth } from '../../context/AuthContext';
 
-const RecipeCard = ({ recipe }) => {
+const RecipeCard = ({ recipe, onDelete, showDeleteButton = false }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  useEffect(() => {
-    console.log('Recipe data:', recipe);
-    console.log('Recipe ID:', recipe._id || recipe.id);
-  }, [recipe]);
+  const handleDelete = async (e) => {
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to delete this recipe?')) {
+      onDelete(recipe._id);
+    }
+  };
 
   const handleCardClick = (e) => {
     if (e.target.closest('button')) {
@@ -44,14 +46,23 @@ const RecipeCard = ({ recipe }) => {
       onClick={handleCardClick}
       className="cursor-pointer bg-white rounded-xl shadow-sm hover:shadow-md transition-all relative"
     >
-      {showFavoriteButton && (
-        <div className="absolute top-2 right-2 z-10">
+      <div className="absolute top-2 right-2 z-10 flex gap-2">
+        {showDeleteButton && (
+          <button
+            onClick={handleDelete}
+            className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+            title="Delete Recipe"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        )}
+        {showFavoriteButton && (
           <FavoriteButton 
             recipeId={recipe._id || recipe.id} 
             initialFavorited={recipe.isFavorited}
           />
-        </div>
-      )}
+        )}
+      </div>
 
       <img 
         src={recipe.image} 

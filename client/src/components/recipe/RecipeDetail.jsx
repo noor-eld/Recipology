@@ -1,24 +1,60 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Clock, ChefHat, Users, Heart } from 'lucide-react';
 import { recipesByCategory, featuredRecipes } from '../../data/recipes';
 
 const RecipeDetail = () => {
- const [isFavorite, setIsFavorite] = useState(false);
- const { id } = useParams();
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [recipe, setRecipe] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { id } = useParams();
 
- // Find recipe from all categories and featured recipes
- const allRecipes = [
-   ...Object.values(recipesByCategory).flat(),
-   ...featuredRecipes
- ];
- const recipe = allRecipes.find(r => r.id === id);
+  useEffect(() => {
+    const fetchRecipe = async () => {
+      try {
+        setLoading(true);
+        // First check prefilled recipes
+        const allPrefilledRecipes = [
+          ...Object.values(recipesByCategory).flat(),
+          ...featuredRecipes
+        ];
+        const prefilledRecipe = allPrefilledRecipes.find(r => r.id === id);
+        
+        if (prefilledRecipe) {
+          setRecipe(prefilledRecipe);
+        } else {
+          // If not found in prefilled, fetch from database
+          const response = await fetch(`http://localhost:5000/api/recipes/${id}`);
+          if (!response.ok) {
+            throw new Error('Recipe not found');
+          }
+          const data = await response.json();
+          setRecipe({
+            ...data,
+            time: `${data.prepTime + data.cookTime} min`,
+            chef: data.author?.username || 'Anonymous'
+          });
+        }
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
- if (!recipe) {
-   return <div className="text-center py-12">Recipe not found</div>;
- }
+    fetchRecipe();
+  }, [id]);
 
- const totalTime = recipe.time;
+  if (loading) {
+    return <div className="text-center py-12">Loading...</div>;
+  }
+
+  if (error || !recipe) {
+    return <div className="text-center py-12">Recipe not found</div>;
+  }
+
+  const totalTime = recipe.time;
 
  return (
    <div className="max-w-4xl mx-auto px-4 py-8">

@@ -31,6 +31,12 @@ const Navbar = () => {
                   Create Recipe
                 </Link>
                 <Link
+                  to="/my-recipes"
+                  className="text-gray-600 hover:text-green-600 transition-colors"
+                >
+                  My Recipes
+                </Link>
+                <Link
                   to="/favorites"
                   className="flex items-center px-4 py-2 text-gray-600 hover:text-gray-800"
                 >
