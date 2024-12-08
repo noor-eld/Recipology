@@ -52,7 +52,11 @@ exports.createRecipe = async (req, res) => {
 
     // Save the recipe
     const savedRecipe = await recipe.save();
-    console.log('Recipe saved successfully:', savedRecipe._id);
+    console.log('Recipe saved successfully:', {
+        id: savedRecipe._id,
+        title: savedRecipe.title,
+        author: savedRecipe.author
+      });
 
     res.status(201).json(savedRecipe);
   } catch (error) {

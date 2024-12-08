@@ -4,7 +4,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node src/app.js",
-    "dev": "nodemon src/app.js"
+    "dev": "nodemon src/app.js",
+    "seed": "node src/seeders/recipeSeeder.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

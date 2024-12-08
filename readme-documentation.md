@@ -1,5 +1,8 @@
 # Recipology - Recipe Website
 
+## GITHUB
+https://github.com/noor-eld/Recipology
+
 ## Overview
 Recipology is a full-stack MERN (MongoDB, Express.js, React.js, Node.js) recipe sharing platform that allows users to create, share, and discover recipes.
 
